@@ -1,5 +1,4 @@
 import os
-import tempfile
 from pathlib import Path
 
 
@@ -27,19 +26,8 @@ def main():
     output_dir = Path(os.environ.get("MAKEFUN_OUTPUT_DIR", "/output"))
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / "entry.txt"
-    temporary_path = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="wb", dir=output_dir, prefix=".entry-", suffix=".tmp", delete=False
-        ) as temporary_file:
-            temporary_path = Path(temporary_file.name)
-            temporary_file.write(poem_bytes)
-            temporary_file.flush()
-            os.fsync(temporary_file.fileno())
-        os.replace(temporary_path, output_path)
-    finally:
-        if temporary_path is not None:
-            temporary_path.unlink(missing_ok=True)
+    output_path.write_bytes(poem_bytes)
+    os.chmod(output_path, 0o644)
 
     if output_path.read_bytes() != poem_bytes:
         raise RuntimeError(
